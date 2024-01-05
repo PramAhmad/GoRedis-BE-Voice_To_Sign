@@ -1,0 +1,15 @@
+package main
+
+import (
+	"backend-berita/initializers"
+	"backend-berita/models"
+)
+
+func init() {
+	initializers.LoadEnvVariables()
+	initializers.ConnectToDB()
+}
+
+func main() {
+	initializers.DB.AutoMigrate(&models.Images{})
+}
