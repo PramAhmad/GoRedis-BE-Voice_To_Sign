@@ -66,7 +66,7 @@ func UploadImages(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	// validate jika name kosong
+
 	if body.Name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Nama tidak boleh kosong"})
 		return
@@ -77,26 +77,93 @@ func UploadImages(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Gambar tidak ditemukan"})
 		return
 	}
-	// custom name file di ubah jadi dari form name
+
 	newFileName := body.Name + filepath.Ext(uploadedImage.Filename)
 
-	// save to folder
-	if err := c.SaveUploadedFile(uploadedImage, "images/"+newFileName); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Gagal menyimpan gambar"})
-		return
-	}
-	// save to database
-	images := models.Images{
-		Name: body.Name,
-		Path: os.Getenv("URL_LINK") + "images/" + newFileName,
-	}
+	saveResult := make(chan error)
 
-	result := initializers.DB.Create(&images)
+	go func() {
+		saveResult <- c.SaveUploadedFile(uploadedImage, "images/"+newFileName)
+	}()
+
+	go func() {
+
+		err := <-saveResult
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Gagal menyimpan gambar"})
+			return
+		}
+
+		images := models.Images{
+			Name: body.Name,
+			Path: os.Getenv("URL_LINK") + "images/" + newFileName,
+		}
+
+		result := initializers.DB.Create(&images)
+		if result.Error != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "gagal memuat images"})
+			return
+		}
+
+		c.JSON(http.StatusCreated, gin.H{"result": images})
+	}()
+
+	c.JSON(http.StatusAccepted, gin.H{"message": "File sedang disimpan dan data sedang diproses"})
+}
+
+// func UploadImages(c *gin.Context) {
+// 	var body struct {
+// 		Name string `json:"name"`
+// 		Path string `json:"path"`
+// 	}
+
+// 	if err := c.Bind(&body); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+// 	// validate jika name kosong
+// 	if body.Name == "" {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Nama tidak boleh kosong"})
+// 		return
+// 	}
+
+// 	uploadedImage, err := c.FormFile("path")
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Gambar tidak ditemukan"})
+// 		return
+// 	}
+// 	// custom name file di ubah jadi dari form name
+// 	newFileName := body.Name + filepath.Ext(uploadedImage.Filename)
+
+// 	// save to folder
+// 	if err := c.SaveUploadedFile(uploadedImage, "images/"+newFileName); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Gagal menyimpan gambar"})
+// 		return
+// 	}
+// 	// save to database
+// 	images := models.Images{
+// 		Name: body.Name,
+// 		Path: os.Getenv("URL_LINK") + "images/" + newFileName,
+// 	}
+
+// 	result := initializers.DB.Create(&images)
+// 	if result.Error != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "gagal memuat images"})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusCreated, gin.H{"result": images})
+
+// }
+func GetAllImages(c *gin.Context) {
+	var images []models.Images
+
+	result := initializers.DB.Find(&images)
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "gagal memuat images"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"result": images})
-
+	c.JSON(http.StatusOK, gin.H{"result": images})
 }

@@ -21,8 +21,13 @@ func main() {
 		c.Next()
 	})
 	r.Static("/images", "./images")
-	//images
+
 	r.GET("/image", controllers.GetImages)
-	r.POST("/image", controllers.UploadImages)
+
+	r.GET("images", controllers.GetAllImages)
+	// loop post images
+	r.POST("/images", controllers.UploadImages)
+
 	r.Run()
+	// faker
 }
