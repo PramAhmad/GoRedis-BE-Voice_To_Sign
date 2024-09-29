@@ -20,7 +20,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	//hash body.Password
+
 	hashPw, err := bcrypt.GenerateFromPassword([]byte(body.Password), 14)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Error saat menghash password"})

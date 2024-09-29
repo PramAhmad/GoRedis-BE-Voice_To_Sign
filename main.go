@@ -29,10 +29,17 @@ func main() {
 	r.Static("/images", "./images")
 	// Middleware untuk menetapkan pembatasan ukuran file
 	r.Use(func(c *gin.Context) {
-		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 500000)
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 5000000)
 
 		c.Next()
 	})
+	// content
+	r.GET("/content", controllers.GetAllContent)
+	r.GET("/content/:id", controllers.GetContent)
+	r.POST("/content", controllers.CreateContent)
+	r.PUT("/content/:id", controllers.UpdateContent)
+	r.DELETE("/content/:id", controllers.DeleteContent)
+
 	// auth
 	r.POST("/register", controllers.Register)
 	r.POST("/login", controllers.GenerateToken)
@@ -40,9 +47,9 @@ func main() {
 	r.GET("/image", controllers.GetImages)
 	r.GET("/image/:id", controllers.GetsingleImage)
 	r.GET("/images", controllers.GetAllImages)
-	r.POST("/images", controllers.UploadImages)
+	r.POST("/image", controllers.UploadImages)
 	r.PUT("/image/:id", controllers.UpdateImage)
 	r.DELETE("/image/:id", controllers.DeleteImage)
+
 	r.Run()
-	// faker
 }
